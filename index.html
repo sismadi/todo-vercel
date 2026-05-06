@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vercel CRUD - Minimalist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Task Manager</h1>
+        
+        <!-- Input Form -->
+        <div class="flex gap-2 mb-6">
+            <input type="text" id="taskInput" placeholder="Tambah tugas baru..." 
+                class="flex-1 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button onclick="addTodo()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Tambah</button>
+        </div>
+
+        <!-- Todo List -->
+        <ul id="todoList" class="space-y-3">
+            <li class="text-center text-gray-500 py-4">Memuat data...</li>
+        </ul>
+    </div>
+
+    <script>
+        const apiEndpoint = '/api/todos';
+
+        async function fetchTodos() {
+            const res = await fetch(apiEndpoint);
+            const data = await res.json();
+            const list = document.getElementById('todoList');
+            list.innerHTML = data.length ? '' : '<li class="text-center text-gray-500 py-4">Belum ada tugas.</li>';
+            
+            data.forEach(todo => {
+                const li = document.createElement('li');
+                li.className = "flex items-center justify-between p-3 bg-gray-50 rounded-md border";
+                li.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" ${todo.done ? 'checked' : ''} onchange="toggleTodo(${todo.id}, ${!todo.done})" class="w-4 h-4 text-blue-600">
+                        <span class="${todo.done ? 'line-through text-gray-400' : 'text-gray-700'}">${todo.task}</span>
+                    </div>
+                    <button onclick="deleteTodo(${todo.id})" class="text-red-500 hover:text-red-700 font-bold">✕</button>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        async function addTodo() {
+            const input = document.getElementById('taskInput');
+            if (!input.value) return;
+            await fetch(apiEndpoint, {
+                method: 'POST',
+                body: JSON.stringify({ task: input.value })
+            });
+            input.value = '';
+            fetchTodos();
+        }
+
+        async function toggleTodo(id, done) {
+            await fetch(apiEndpoint, {
+                method: 'PUT',
+                body: JSON.stringify({ id, done })
+            });
+            fetchTodos();
+        }
+
+        async function deleteTodo(id) {
+            await fetch(`${apiEndpoint}?id=${id}`, { method: 'DELETE' });
+            fetchTodos();
+        }
+
+        // Init
+        fetchTodos();
+    </script>
+</body>
+</html>
